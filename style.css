@@ -1,0 +1,404 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@600;700;800;900&display=swap');
+
+/* =========================================================
+   DESIGN TOKENS
+   ========================================================= */
+:root {
+  --bg-page: #f0f4f8;
+  --bg-card: #ffffff;
+  --border-color: rgba(15, 23, 42, 0.08);
+  --border-hover: rgba(2, 132, 199, 0.35);
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06);
+  --shadow-hover: 0 2px 4px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.1);
+  --accent-sky: #0284c7;
+  --accent-teal: #0d9488;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --aqi-good: #22c55e;
+  --aqi-satisfactory: #84cc16;
+  --aqi-moderate: #eab308;
+  --aqi-poor: #f97316;
+  --aqi-verypoor: #ef4444;
+  --aqi-severe: #dc2626;
+}
+
+/* =========================================================
+   RESET & BASE
+   ========================================================= */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: 
+    linear-gradient(180deg, rgba(240, 246, 252, 0.45) 0%, rgba(226, 235, 245, 0.65) 100%),
+    url('assets/weather_bg.jpg') no-repeat center top fixed;
+  background-size: cover;
+  background-attachment: fixed;
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, .font-heading {
+  font-family: 'Outfit', sans-serif;
+}
+
+.font-mono, code {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* =========================================================
+   TRANSPARENT GLASSY UTILITIES (Glassmorphism)
+   ========================================================= */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(20px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(190%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.85) !important;
+  box-shadow: 0 10px 32px 0 rgba(15, 23, 42, 0.07), 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.74);
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 10px 30px 0 rgba(15, 23, 42, 0.06), 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.glass-card-hover {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease;
+}
+
+.glass-card-hover:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 12px 30px 0 rgba(31, 38, 135, 0.08), 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+.glass-subtle {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+}
+
+.glass-header {
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(20px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(190%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* dropdown → white surface */
+.glass-dropdown {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* =========================================================
+   LEAFLET MAP — LIGHT THEME OVERRIDES
+   ========================================================= */
+.leaflet-container {
+  background: #e2e8f0 !important;
+  font-family: 'Inter', sans-serif !important;
+  height: 100% !important;
+  width: 100% !important;
+}
+
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: var(--shadow-card) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+}
+
+.leaflet-control-zoom a {
+  background: #ffffff !important;
+  color: #475569 !important;
+  border-color: rgba(0, 0, 0, 0.07) !important;
+  transition: all 0.15s ease !important;
+  width: 32px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+  font-size: 16px !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: #f8fafc !important;
+  color: var(--accent-sky) !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: #ffffff !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16) !important;
+  padding: 4px !important;
+}
+
+.leaflet-popup-tip {
+  background: #ffffff !important;
+}
+
+.leaflet-tooltip {
+  background: rgba(255, 255, 255, 0.97) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: var(--text-primary) !important;
+  border-radius: 8px !important;
+  padding: 6px 10px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+  font-size: 11px !important;
+}
+
+/* =========================================================
+   RANGE SLIDER (aqi.in light style)
+   ========================================================= */
+input[type="range"] {
+  -webkit-appearance: none;
+  background: transparent;
+  width: 100%;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 18px;
+  width: 18px;
+  border-radius: 50%;
+  background: var(--accent-sky);
+  cursor: pointer;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2), 0 2px 6px rgba(2, 132, 199, 0.4);
+  border: 2px solid #ffffff;
+  margin-top: -6px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
+  box-shadow: 0 0 0 5px rgba(2, 132, 199, 0.15), 0 3px 10px rgba(2, 132, 199, 0.5);
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  cursor: pointer;
+  background: #e2e8f0;
+  border-radius: 3px;
+}
+
+input[type="range"]:focus {
+  outline: none;
+}
+
+/* =========================================================
+   CUSTOM SCROLLBAR — LIGHT
+   ========================================================= */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(2, 132, 199, 0.35);
+}
+
+/* =========================================================
+   STATION BADGES ON MAP (light bg)
+   ========================================================= */
+.station-pin-container {
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.station-pin-container:hover {
+  transform: translate(-50%, -50%) scale(1.2);
+  z-index: 1000 !important;
+}
+
+.station-badge-pill {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1.5px solid rgba(0, 0, 0, 0.14);
+  border-radius: 20px;
+  padding: 2px 6px 2px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18), 0 0 0 0.5px rgba(0,0,0,0.04);
+  white-space: nowrap;
+}
+
+.station-badge-code {
+  color: #475569;
+  margin-right: 5px;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.station-badge-val {
+  padding: 1px 6px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 11px;
+  color: #030712;
+}
+
+/* =========================================================
+   TELECOM TOWER ICON
+   ========================================================= */
+.telecom-tower-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(2, 132, 199, 0.12);
+  border: 1.5px solid var(--accent-sky);
+  color: var(--accent-sky);
+  font-size: 9px;
+  box-shadow: 0 0 6px rgba(2, 132, 199, 0.28);
+}
+
+/* =========================================================
+   LAYOUT TRANSITION
+   ========================================================= */
+.deck-transition {
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* =========================================================
+   CML BEAM PULSING
+   ========================================================= */
+@keyframes microwavePulse {
+  0%   { opacity: 0.45; }
+  50%  { opacity: 1.0; }
+  100% { opacity: 0.45; }
+}
+
+.cml-beam-pulsing {
+  animation: microwavePulse 2s infinite ease-in-out;
+}
+
+/* =========================================================
+   PULSE RING (fire hotspots)
+   ========================================================= */
+@keyframes subtlePulse {
+  0%   { transform: scale(0.9); opacity: 0.8; }
+  50%  { transform: scale(1.5); opacity: 0.12; }
+  100% { transform: scale(0.9); opacity: 0.8; }
+}
+
+.subtle-pulse-ring {
+  animation: subtlePulse 2.4s infinite ease-in-out;
+}
+
+/* =========================================================
+   STICKY HEADER SHADOW
+   ========================================================= */
+header.sticky {
+  box-shadow: 0 1px 0 rgba(0,0,0,0.06), 0 2px 12px rgba(0,0,0,0.04);
+}
+
+/* =========================================================
+   HOURLY FORECAST SCROLL
+   ========================================================= */
+.forecast-scroll::-webkit-scrollbar {
+  height: 3px;
+}
+
+/* =========================================================
+   AQI DONUT CIRCLE ANIMATION
+   ========================================================= */
+circle {
+  transition: stroke-dashoffset 0.9s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.4s ease;
+}
+
+/* =========================================================
+   CHECKBOX STYLING
+   ========================================================= */
+input[type="checkbox"] {
+  accent-color: var(--accent-sky);
+}
+
+/* =========================================================
+   AQI.IN SPECIFIC VISUAL TOKENS & COMPONENTS
+   ========================================================= */
+.aqi-scale-strip {
+  height: 6px;
+  border-radius: 9999px;
+  background: linear-gradient(to right,
+    #10b981 0%,   #10b981 16.6%,
+    #84cc16 16.6%, #84cc16 33.3%,
+    #f59e0b 33.3%, #f59e0b 50%,
+    #f97316 50%,   #f97316 66.6%,
+    #ef4444 66.6%, #ef4444 83.3%,
+    #7f1d1d 83.3%, #7f1d1d 100%
+  );
+}
+
+.temp-range-bar {
+  height: 6px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #38bdf8, #fbbf24, #f87171);
+}
+
+.aqi-badge-pulse {
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+  animation: aqiPulse 2s infinite;
+}
+
+@keyframes aqiPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.weather-param-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.weather-param-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  border-color: #cbd5e1;
+}
+
+.forecast-hour-card {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.forecast-hour-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
