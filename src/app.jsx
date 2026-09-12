@@ -34,6 +34,8 @@ function CloverApp() {
   const [playSpeed, setPlaySpeed] = useState(1);
   const [activeModel, setActiveModel] = useState('modelB'); // 'modelB' (CML RSL Fusion), 'modelA' (Baseline Numerical)
   const [searchQuery, setSearchQuery] = useState('');
+  const [apiState, setApiState] = useState({ status: 'connecting', observations: [], alerts: [], links: [] });
+  const [backendForecast, setBackendForecast] = useState(null);
 
   // Default to Greater Noida Station (Knowledge Park III)
   const defaultStationId = stations.find(s => s.id.includes('gnoida') || s.name.includes('Greater Noida'))?.id || stations[0].id;
@@ -72,6 +74,47 @@ function CloverApp() {
 
   const currentWx = weather72h[selectedHour] || weather72h[0];
 
+  // Poll the Node API. The locally generated design data remains a deliberate
+  // offline fallback until field telemetry has been ingested by the backend.
+  useEffect(() => {
+    let active = true;
+    const refresh = async () => {
+      try {
+        const [health, aq, weather, cml, alerts, links] = await Promise.all([
+          window.CLOVER_API.health(), window.CLOVER_API.latest('aq_station'),
+          window.CLOVER_API.latest('weather'), window.CLOVER_API.latest('cml'),
+          window.CLOVER_API.alerts(), window.CLOVER_API.links()
+        ]);
+        if (active) setApiState({ status: health.status === 'ok' ? 'live' : 'degraded', observations: [...(aq.data || []), ...(weather.data || []), ...(cml.data || [])], alerts: alerts.data || [], links: links.data || [] });
+      } catch (_error) {
+        if (active) setApiState(previous => ({ ...previous, status: 'offline' }));
+      }
+    };
+    refresh();
+    const poll = setInterval(refresh, 30000);
+    return () => { active = false; clearInterval(poll); };
+  }, []);
+
+  const livePm25ByStation = useMemo(() => Object.fromEntries(
+    apiState.observations.filter(o => o.source === 'aq_station' && Number.isFinite(o.pm25)).map(o => [o.deviceId, o.pm25])
+  ), [apiState.observations]);
+
+  // Request the FastAPI forecast through the Node gateway only when real AQ
+  // data exists. This avoids presenting simulation values as ML input.
+  useEffect(() => {
+    const pm25 = livePm25ByStation[selectedStationId];
+    if (!Number.isFinite(pm25) || apiState.status !== 'live') { setBackendForecast(null); return; }
+    const weather = apiState.observations.find(o => o.source === 'weather') || {};
+    const healthyLinks = apiState.links.filter(link => link.health && link.health.status === 'healthy').length;
+    let active = true;
+    window.CLOVER_API.forecast({
+      stationId: selectedStationId,
+      features: { pm25, temperatureC: weather.temperatureC ?? null, humidityPct: weather.humidityPct ?? null, windSpeedMs: weather.windSpeedMs ?? null, cmlMeanRslDbm: null, cmlHealthyLinks: healthyLinks },
+      horizons: Array.from({ length: 73 }, (_, hour) => hour)
+    }).then(result => { if (active) setBackendForecast(result); }).catch(() => { if (active) setBackendForecast(null); });
+    return () => { active = false; };
+  }, [selectedStationId, livePm25ByStation, apiState.status, apiState.observations, apiState.links]);
+
   // Helper for Temperature Conversion
   const formatTemp = (celsius) => {
     if (tempUnit === 'F') {
@@ -106,7 +149,9 @@ function CloverApp() {
   // Station specific metrics for current selected hour
   const currentStationMetrics = useMemo(() => {
     const traj = selectedStation.currentTrajectory;
-    const pm25 = activeModel === 'modelA' ? traj.modelA_PM25 : traj.modelB_PM25;
+    const simulatedPm25 = activeModel === 'modelA' ? traj.modelA_PM25 : traj.modelB_PM25;
+    const forecastPoint = backendForecast?.forecast?.find(point => point.horizonHours === selectedHour);
+    const pm25 = Number.isFinite(forecastPoint?.pm25) ? forecastPoint.pm25 : (selectedHour === 0 && Number.isFinite(livePm25ByStation[selectedStation.station.id]) ? livePm25ByStation[selectedStation.station.id] : simulatedPm25);
     const pm10 = Math.round(pm25 * 1.55);
     const no2 = traj.modelB_NO2 || selectedStation.station.baseNO2;
     const so2 = traj.modelB_SO2 || selectedStation.station.baseSO2;
@@ -125,7 +170,7 @@ function CloverApp() {
       aqi,
       aqiCategory
     };
-  }, [selectedStation, activeModel]);
+  }, [selectedStation, activeModel, selectedHour, livePm25ByStation, backendForecast]);
 
   // Regional Meteorological & CML Aggregations
   const regionalMetrics = useMemo(() => {
@@ -697,6 +742,7 @@ function CloverApp() {
 
           {/* Right Action Controls: Clean Time & Unit Toggles (No "LIVE" tag) */}
           <div className="flex items-center gap-2.5">
+            <ApiStatusBadge status={apiState.status} alertCount={apiState.alerts.length} recordCount={apiState.observations.length} />
             {/* Real-time Clock Pill */}
             <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-subtle text-slate-700 text-xs font-semibold font-mono">
               <span className="text-emerald-600">🕒</span>
