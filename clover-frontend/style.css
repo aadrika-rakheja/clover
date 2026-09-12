@@ -33,7 +33,11 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  /* Native smooth-scroll is disabled — Lenis handles smooth scrolling instead.
+     Keeping both active causes jitter. */
+  scroll-behavior: auto;
+  height: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -46,7 +50,10 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  min-height: 100vh;
+  min-height: 100%;
+  /* overflow-y must be auto/scroll for Lenis to intercept wheel events */
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 h1, h2, h3, h4, .font-heading {
@@ -402,3 +409,30 @@ input[type="checkbox"] {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
 }
 
+/* =========================================================
+   API CONNECTION PANEL
+   ========================================================= */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+#api-panel {
+  animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#api-panel-toggle {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+#api-panel-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+
+/* Pulse ring on new API call */
+@keyframes apiBtnPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45); }
+  70%  { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}

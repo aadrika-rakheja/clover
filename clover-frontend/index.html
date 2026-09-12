@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="CLOVER — Delhi NCR &amp; Greater Noida Atmospheric &amp; Air Quality Forecasting Engine with Coupled CML Microwave Sensing.">
+  <meta name="theme-color" content="#f0f4f8">
+  <title>CLOVER // Greater Noida Weather &amp; Air Quality Index</title>
+
+  <!-- ── Tailwind CSS CDN ──────────────────────────────────────────────── -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            aqi: {
+              good: '#22c55e',
+              satisfactory: '#84cc16',
+              moderate: '#eab308',
+              poor: '#f97316',
+              verypoor: '#ef4444',
+              severe: '#dc2626'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            heading: ['Outfit', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- ── Leaflet CSS & JS ──────────────────────────────────────────────── -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+  <!-- ── Chart.js ─────────────────────────────────────────────────────── -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- ── GSAP Animation Library ───────────────────────────────────────── -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <!-- ── Lenis Smooth Scroll ──────────────────────────────────────────── -->
+  <script src="https://unpkg.com/lenis@1.1.9/dist/lenis.min.js"></script>
+
+  <!-- ── React 18 & ReactDOM CDN ──────────────────────────────────────── -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+  <!-- ── Babel for runtime JSX transpilation ──────────────────────────── -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- ── Custom CSS ───────────────────────────────────────────────────── -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="text-slate-800 min-h-screen antialiased selection:bg-sky-200 selection:text-sky-900">
+  <div id="root"></div>
+
+  <!--
+    LOAD ORDER — must be strictly respected (no module bundler, globals only):
+
+    1. Plain JS data/engine files  → register window.* globals
+    2. Plain JS utility/service    → register window.AQI_UTILS, window.CLOVER_API
+    3. Babel JSX components        → register window.ComponentName
+       ├─ Primitive / no-dependency components first
+       └─ Composite components (depend on primitives) after
+    4. app.jsx last                → consumes everything above
+  -->
+
+  <!-- ── 1. Data providers & physics engines ──────────────────────────── -->
+  <script src="src/delhiData.js"></script>
+  <script src="src/cmlPhysics.js"></script>
+  <script src="src/forecastingModel.js"></script>
+
+  <!-- ── 2. Utility & service globals ─────────────────────────────────── -->
+  <script src="src/utils/aqi.js"></script>
+  <script src="src/services/api.js"></script>
+
+  <!-- ── 3. JSX components (dependency order) ─────────────────────────── -->
+
+  <!-- Primitive — no JSX dependencies -->
+  <script type="text/babel" src="src/components/ApiStatusBadge.jsx"></script>
+  <script type="text/babel" src="src/components/Footer.jsx"></script>
+  <script type="text/babel" src="src/components/LocationBreadcrumb.jsx"></script>
+  <!-- Reusable API connection panel (floats above all tabs) -->
+  <script type="text/babel" src="src/components/ApiConnectionPanel.jsx"></script>
+
+  <!-- Layout / navigation -->
+  <script type="text/babel" src="src/components/Header.jsx"></script>
+
+  <!-- Overview tab components -->
+  <script type="text/babel" src="src/components/WeatherHeroCard.jsx"></script>
+  <script type="text/babel" src="src/components/AQICard.jsx"></script>
+  <script type="text/babel" src="src/components/WeatherParamGrid.jsx"></script>
+  <script type="text/babel" src="src/components/HourlyForecast.jsx"></script>
+  <script type="text/babel" src="src/components/SevenDayForecast.jsx"></script>
+  <script type="text/babel" src="src/components/HealthRecommendations.jsx"></script>
+  <script type="text/babel" src="src/components/PollutantsGrid.jsx"></script>
+  <script type="text/babel" src="src/components/StationsTable.jsx"></script>
+
+  <!-- Dedicated tab components -->
+  <script type="text/babel" src="src/components/ForecastTab.jsx"></script>
+  <script type="text/babel" src="src/components/MapView.jsx"></script>
+  <script type="text/babel" src="src/components/PollutantsDeepDive.jsx"></script>
+  <script type="text/babel" src="src/components/CmlSciencePanel.jsx"></script>
+
+  <!-- ── 4. App root — consumes all globals above ─────────────────────── -->
+  <script type="text/babel" src="src/app.jsx"></script>
+
+  <!-- ── 5. Lenis smooth scroll init ─────────────────────────────────── -->
+  <script>
+    // Initialise after React renders (React 18 batches, so wait one task).
+    // Using setTimeout(0) ensures the DOM tree exists before Lenis queries it.
+    setTimeout(function () {
+      if (typeof Lenis !== 'undefined') {
+        var lenis = new Lenis({
+          lerp: 0.08,
+          smoothWheel: true,
+          // Lenis must NOT override touch on mobile to avoid fighting the
+          // browser's native momentum scroll
+          touchMultiplier: 2,
+        });
+        function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+        requestAnimationFrame(raf);
+        // Expose so other scripts can stop/start if needed
+        window._lenis = lenis;
+      }
+    }, 0);
+  </script>
+</body>
+</html>
