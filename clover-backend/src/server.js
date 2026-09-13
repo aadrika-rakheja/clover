@@ -12,15 +12,16 @@ import { logger } from './utils/logger.js';
 
 async function start() {
   try {
-    // 1. Connect to MongoDB before accepting traffic
     await connectDatabase();
+  } catch (dbErr) {
+    logger.warn(`MongoDB not connected on startup (${dbErr.message}). API will run with fallback / memory mode.`);
+  }
 
-    // 2. Start listening
+  try {
     const server = app.listen(env.port, () => {
       logger.info(`Clover API listening on :${env.port} [${env.nodeEnv}]`);
     });
 
-    // 3. Graceful shutdown handler — allows Docker / Kubernetes to drain connections
     const shutdown = (signal) => {
       logger.info(`${signal} received — shutting down gracefully`);
       server.close(() => {
@@ -30,8 +31,7 @@ async function start() {
     };
 
     process.on('SIGTERM', () => shutdown('SIGTERM'));
-    process.on('SIGINT',  () => shutdown('SIGINT'));
-
+    process.on('SIGINT', () => shutdown('SIGINT'));
   } catch (error) {
     logger.error('Failed to start Clover API', error);
     process.exit(1);

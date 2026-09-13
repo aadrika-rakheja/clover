@@ -25,15 +25,17 @@ export const env = {
    */
   corsOrigin: (process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:3000').split(',').map(o => o.trim()),
 
-  /**
-   * Base URL of the Python FastAPI ML prediction service.
-   * Supports both PREDICTION_SERVICE_URL and ML_SERVICE_URL aliases.
-   */
+  /** Base URL of the Python FastAPI ML prediction service. */
   predictionServiceUrl: (
     process.env.PREDICTION_SERVICE_URL ||
     process.env.ML_SERVICE_URL ||
     'http://localhost:8000'
   ).replace(/\/$/, ''),
+
+  /** Redis host and port configuration */
+  redisHost: process.env.REDIS_HOST || '127.0.0.1',
+  redisPort: Number(process.env.REDIS_PORT || 6379),
+  redisPassword: process.env.REDIS_PASSWORD || '',
 
   /** Minimum log level: 'error' | 'warn' | 'info' | 'debug' */
   logLevel: process.env.LOG_LEVEL || 'info',

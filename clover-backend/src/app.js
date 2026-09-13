@@ -7,16 +7,38 @@
  */
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 import { env } from './config/env.js';
 import routes from './routes/index.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
+import { requestIdMiddleware } from './middleware/requestId.js';
+import { getRedisClient } from './config/redis.js';
 
 const app = express();
 
-// ── Security ───────────────────────────────────────────────────────────────
-// Remove the X-Powered-By header to avoid advertising the framework version
+// Initialize Redis if configured
+getRedisClient();
+
+// ── Security & Headers ─────────────────────────────────────────────────────
 app.disable('x-powered-by');
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable default CSP for flexible local dev API usage
+}));
+
+// ── Request ID & Tracking ──────────────────────────────────────────────────
+app.use(requestIdMiddleware);
+
+// ── Rate Limiting ──────────────────────────────────────────────────────────
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300, // Max 300 requests per IP per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { message: 'Too many requests, please try again later.', statusCode: 429 } },
+});
+app.use(limiter);
 
 // ── CORS ───────────────────────────────────────────────────────────────────
 app.use(cors({
@@ -25,19 +47,23 @@ app.use(cors({
 }));
 
 // ── Body parsing ───────────────────────────────────────────────────────────
-// 2 MB limit accommodates batch observation ingestion payloads
 app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
-// ── Health check ───────────────────────────────────────────────────────────
-// Simple liveness probe — does not require DB connectivity
-app.get('/health', (_req, res) => {
+// ── Health Check Endpoints ────────────────────────────────────────────────
+const healthHandler = (_req, res) => {
   res.json({
     status: 'ok',
-    service: 'clover-api',
+    service: 'clover-backend-api',
+    version: '1.0.0',
     environment: env.nodeEnv,
-    time: new Date().toISOString(),
+    timestamp: new Date().toISOString(),
+    predictionServiceUrl: env.predictionServiceUrl,
   });
-});
+};
+
+app.get('/health', healthHandler);
+app.get('/api/v1/health', healthHandler);
 
 // ── API routes ─────────────────────────────────────────────────────────────
 app.use('/api/v1', routes);

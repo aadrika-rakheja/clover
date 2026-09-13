@@ -1,0 +1,220 @@
+{
+  "training_timestamp": "2026-09-12T00:09:51.849090",
+  "horizons_hours": [
+    1,
+    3,
+    6,
+    12,
+    24,
+    72
+  ],
+  "features_count": 90,
+  "feature_names": [
+    "temperature",
+    "relative_humidity",
+    "dew_point",
+    "surface_pressure",
+    "precipitation",
+    "wind_speed",
+    "wind_direction",
+    "solar_radiation",
+    "cloud_cover",
+    "pblh",
+    "pm25",
+    "pm10",
+    "no2",
+    "so2",
+    "co",
+    "o3",
+    "voc",
+    "cml_rsl_dbm",
+    "cml_specific_attenuation",
+    "wind_u",
+    "wind_v",
+    "ventilation_index",
+    "is_inversion_risk",
+    "stagnation_index",
+    "dew_point_depression",
+    "hygroscopic_factor",
+    "hour_sin",
+    "hour_cos",
+    "doy_sin",
+    "doy_cos",
+    "is_weekend",
+    "pm25_lag_1h",
+    "pm10_lag_1h",
+    "temperature_lag_1h",
+    "wind_speed_lag_1h",
+    "cml_rsl_lag_1h",
+    "pm25_lag_2h",
+    "pm10_lag_2h",
+    "temperature_lag_2h",
+    "wind_speed_lag_2h",
+    "cml_rsl_lag_2h",
+    "pm25_lag_3h",
+    "pm10_lag_3h",
+    "temperature_lag_3h",
+    "wind_speed_lag_3h",
+    "cml_rsl_lag_3h",
+    "pm25_lag_6h",
+    "pm10_lag_6h",
+    "temperature_lag_6h",
+    "wind_speed_lag_6h",
+    "cml_rsl_lag_6h",
+    "pm25_lag_12h",
+    "pm10_lag_12h",
+    "temperature_lag_12h",
+    "wind_speed_lag_12h",
+    "cml_rsl_lag_12h",
+    "pm25_lag_24h",
+    "pm10_lag_24h",
+    "temperature_lag_24h",
+    "wind_speed_lag_24h",
+    "cml_rsl_lag_24h",
+    "pm25_roll_mean_3h",
+    "pm25_roll_std_3h",
+    "pm10_roll_mean_3h",
+    "wind_speed_roll_mean_3h",
+    "pblh_roll_mean_3h",
+    "cml_attn_roll_mean_3h",
+    "pm25_roll_mean_6h",
+    "pm25_roll_std_6h",
+    "pm10_roll_mean_6h",
+    "wind_speed_roll_mean_6h",
+    "pblh_roll_mean_6h",
+    "cml_attn_roll_mean_6h",
+    "pm25_roll_mean_12h",
+    "pm25_roll_std_12h",
+    "pm10_roll_mean_12h",
+    "wind_speed_roll_mean_12h",
+    "pblh_roll_mean_12h",
+    "cml_attn_roll_mean_12h",
+    "pm25_roll_mean_24h",
+    "pm25_roll_std_24h",
+    "pm10_roll_mean_24h",
+    "wind_speed_roll_mean_24h",
+    "pblh_roll_mean_24h",
+    "cml_attn_roll_mean_24h",
+    "pm25_diff_1h",
+    "pm25_diff_3h",
+    "pm25_diff_6h",
+    "temp_diff_3h",
+    "cml_rsl_diff_1h"
+  ],
+  "metrics": {
+    "pm25": {
+      "1h": {
+        "mae": 13.13,
+        "rmse": 16.44,
+        "r2": 0.141,
+        "picp_percent": 91.2,
+        "mpiw": 38.86
+      },
+      "3h": {
+        "mae": 14.81,
+        "rmse": 18.25,
+        "r2": -0.059,
+        "picp_percent": 68.1,
+        "mpiw": 36.23
+      },
+      "6h": {
+        "mae": 14.15,
+        "rmse": 17.65,
+        "r2": 0.009,
+        "picp_percent": 70.8,
+        "mpiw": 37.31
+      },
+      "12h": {
+        "mae": 13.51,
+        "rmse": 17.17,
+        "r2": 0.062,
+        "picp_percent": 90.9,
+        "mpiw": 41.19
+      },
+      "24h": {
+        "mae": 19.53,
+        "rmse": 23.8,
+        "r2": -0.789,
+        "picp_percent": 91.5,
+        "mpiw": 42.45
+      },
+      "72h": {
+        "mae": 23.43,
+        "rmse": 27.54,
+        "r2": -1.389,
+        "picp_percent": 94.1,
+        "mpiw": 48.86
+      }
+    },
+    "aqi": {
+      "1h": {
+        "mae": 14.75,
+        "rmse": 23.48,
+        "r2": 0.453,
+        "picp_percent": 75.7,
+        "mpiw": 45.83
+      },
+      "3h": {
+        "mae": 15.91,
+        "rmse": 24.98,
+        "r2": 0.382,
+        "picp_percent": 74.6,
+        "mpiw": 46.79
+      },
+      "6h": {
+        "mae": 17.14,
+        "rmse": 26.02,
+        "r2": 0.329,
+        "picp_percent": 72.2,
+        "mpiw": 47.82
+      },
+      "12h": {
+        "mae": 16.57,
+        "rmse": 25.55,
+        "r2": 0.352,
+        "picp_percent": 73.4,
+        "mpiw": 48.41
+      },
+      "24h": {
+        "mae": 17.74,
+        "rmse": 26.56,
+        "r2": 0.301,
+        "picp_percent": 70.4,
+        "mpiw": 47.21
+      },
+      "72h": {
+        "mae": 35.87,
+        "rmse": 46.11,
+        "r2": -1.133,
+        "picp_percent": 71.1,
+        "mpiw": 61.7
+      }
+    },
+    "weather_feedback": {
+      "solar_attenuation_watts": {
+        "mae": 0.057,
+        "rmse": 0.111,
+        "r2": 0.999
+      },
+      "temp_depression_c": {
+        "mae": 0.001,
+        "rmse": 0.003,
+        "r2": 0.995
+      },
+      "pblh_suppression_m": {
+        "mae": 0.109,
+        "rmse": 0.397,
+        "r2": 0.999
+      },
+      "visibility_km": {
+        "mae": 0.171,
+        "rmse": 0.236,
+        "r2": 0.999
+      }
+    },
+    "pytorch_gru": {
+      "trajectory_mae": 13.47,
+      "overall_r2": -0.032
+    }
+  }
+}

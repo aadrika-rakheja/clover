@@ -1,0 +1,16 @@
+/**
+ * requestId.js — Request ID middleware for correlation tracking.
+ * Attaches or propagates `X-Request-ID` to all HTTP requests and responses.
+ */
+import { v4 as uuidv4 } from 'uuid';
+
+export function requestIdMiddleware(req, res, next) {
+  const existingId = req.headers['x-request-id'];
+  const requestId = existingId || uuidv4();
+
+  req.id = requestId;
+  res.setHeader('X-Request-ID', requestId);
+  next();
+}
+
+export default requestIdMiddleware;
