@@ -129,6 +129,28 @@ function Header({
 
         {/* ── Right Controls ─────────────────────────────────────── */}
         <div className="flex items-center gap-2.5">
+          {/* Sync Live Telemetry Button */}
+          <button
+            id="sync-live-telemetry-btn"
+            onClick={async (e) => {
+              const btn = e.currentTarget;
+              btn.disabled = true;
+              btn.innerText = '⚡ Syncing...';
+              try {
+                await window.CLOVER_API.syncTelemetry();
+                btn.innerText = '✅ Synced';
+                setTimeout(() => { btn.innerText = '⚡ Sync Live'; btn.disabled = false; }, 2500);
+              } catch {
+                btn.innerText = '❌ Failed';
+                setTimeout(() => { btn.innerText = '⚡ Sync Live'; btn.disabled = false; }, 2500);
+              }
+            }}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all flex items-center gap-1 cursor-pointer"
+            title="Fetch real-time live dynamic AQI and Weather telemetry from satellite/station feed"
+          >
+            ⚡ Sync Live
+          </button>
+
           <ApiStatusBadge
             status={apiState.status}
             alertCount={apiState.alerts.length}

@@ -30,6 +30,7 @@ router.get('/weather', asyncHandler(weatherController.getWeather));
 // ── Sensor Observations ────────────────────────────────────────────────────
 router.get('/observations/latest',          asyncHandler(dataController.latest));
 router.post('/ingestion/observations',      asyncHandler(dataController.ingest));
+router.post('/telemetry/sync',              asyncHandler(dataController.syncLiveData));
 
 // ── Commercial Microwave Links (CML) ──────────────────────────────────────
 router.get('/cml/links',                    asyncHandler(cmlController.listLinks));

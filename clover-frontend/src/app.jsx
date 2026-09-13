@@ -95,7 +95,24 @@ function CloverApp() {
   const chartInstanceRef    = useRef(null);
 
   // ── Current weather snapshot ──────────────────────────────────────────────
-  const currentWx = weather72h[selectedHour] || weather72h[0];
+  const liveWeatherObs = useMemo(() =>
+    apiState.observations.find(o => o.source === 'weather'),
+    [apiState.observations]
+  );
+
+  const fallbackWx = weather72h[selectedHour] || weather72h[0];
+  const currentWx = useMemo(() => {
+    if (selectedHour === 0 && liveWeatherObs) {
+      return {
+        ...fallbackWx,
+        temp: liveWeatherObs.temperatureC ?? fallbackWx.temp,
+        relativeHumidity: liveWeatherObs.humidityPct ?? fallbackWx.relativeHumidity,
+        windSpeed: liveWeatherObs.windSpeedMs ?? fallbackWx.windSpeed,
+        windDir: liveWeatherObs.windDirectionDeg ?? fallbackWx.windDir,
+      };
+    }
+    return fallbackWx;
+  }, [selectedHour, liveWeatherObs, fallbackWx]);
 
   // ── Backend API polling (30 s) ────────────────────────────────────────────
   // Live telemetry is preferred; the physics engine provides an offline fallback.
@@ -207,16 +224,20 @@ function CloverApp() {
           ? livePm25ByStation[selectedStation.station.id]
           : simulatedPm25);
 
-    const pm10 = Math.round(pm25 * 1.55);
-    const no2  = traj.modelB_NO2 || selectedStation.station.baseNO2;
-    const so2  = traj.modelB_SO2 || selectedStation.station.baseSO2;
-    const co   = +(traj.modelB_CO || selectedStation.station.baseCO).toFixed(1);
-    const o3   = traj.modelB_O3  || selectedStation.station.baseO3;
+    const liveObsForStation = apiState.observations.find(
+      o => o.source === 'aq_station' && (o.deviceId === selectedStation.station.id || o.deviceId.includes(selectedStation.station.id.split('_').pop()))
+    );
+
+    const pm10 = liveObsForStation?.pm10 ?? Math.round(pm25 * 1.55);
+    const no2  = liveObsForStation?.no2 ?? (traj.modelB_NO2 || selectedStation.station.baseNO2);
+    const so2  = liveObsForStation?.so2 ?? (traj.modelB_SO2 || selectedStation.station.baseSO2);
+    const co   = liveObsForStation?.co ?? +(traj.modelB_CO || selectedStation.station.baseCO).toFixed(1);
+    const o3   = liveObsForStation?.o3 ?? (traj.modelB_O3  || selectedStation.station.baseO3);
     const aqi  = window.FORECAST_ENGINE.calculateAQI(pm25);
     const aqiCategory = window.FORECAST_ENGINE.getAQICategory(aqi);
 
     return { pm25, pm10, no2, so2, co, o3, aqi, aqiCategory };
-  }, [selectedStation, activeModel, selectedHour, livePm25ByStation, backendForecast]);
+  }, [selectedStation, activeModel, selectedHour, livePm25ByStation, backendForecast, apiState.observations]);
 
   const regionalMetrics = useMemo(() => {
     let sumPM25 = 0;

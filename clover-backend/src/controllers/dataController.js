@@ -6,6 +6,7 @@
  *   GET  /api/v1/observations/latest     → fetch latest readings (optionally filtered by source)
  */
 import { createObservations, latestObservations } from '../services/observationService.js';
+import { syncLiveTelemetry } from '../services/externalDataService.js';
 import { AppError } from '../utils/AppError.js';
 
 const VALID_SOURCES = ['cml', 'aq_station', 'weather'];
@@ -52,3 +53,18 @@ export async function latest(req, res) {
   const data = await latestObservations(source, limit);
   res.json({ data });
 }
+
+/**
+ * Trigger live dynamic telemetry fetch from Open-Meteo for all active stations.
+ *
+ * @route   POST /api/v1/telemetry/sync
+ * @access  Public
+ */
+export async function syncLiveData(_req, res) {
+  const result = await syncLiveTelemetry();
+  res.json({
+    message: 'Live dynamic telemetry sync complete',
+    ...result,
+  });
+}
+

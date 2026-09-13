@@ -110,5 +110,8 @@
       });
       return result.data;
     },
+
+    // Trigger dynamic live telemetry sync
+    syncTelemetry: () => request('/api/v1/telemetry/sync', { method: 'POST' }),
   };
 })();
