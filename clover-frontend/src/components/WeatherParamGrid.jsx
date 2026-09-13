@@ -8,41 +8,47 @@
  *  formatTemp             {Function}
  */
 function WeatherParamGrid({ currentWx, currentStationMetrics, regionalMetrics, formatTemp }) {
+  const isHumValid = Number.isFinite(currentWx?.relativeHumidity);
+  const isWindValid = Number.isFinite(currentWx?.windSpeed);
+  const isPressValid = Number.isFinite(currentWx?.pressure);
+  const isVisValid = Number.isFinite(currentWx?.visibility);
+  const isUvValid = Number.isFinite(currentWx?.uvIndex);
+
   const params = [
     {
       icon: '💧', label: 'Humidity',
-      value: `${currentWx.relativeHumidity}%`,
-      desc: `Dew Point ${formatTemp(currentWx.dewPoint)}`,
+      value: isHumValid ? `${currentWx.relativeHumidity}%` : 'Unavailable',
+      desc: Number.isFinite(currentWx?.dewPoint) ? `Dew Point ${formatTemp(currentWx.dewPoint)}` : 'Dew point N/A',
       barColor: '#0ea5e9',
-      pct: currentWx.relativeHumidity,
+      pct: isHumValid ? currentWx.relativeHumidity : 0,
     },
     {
       icon: '💨', label: 'Wind Speed',
-      value: `${currentWx.windSpeed} m/s`,
-      desc: `Direction ${currentWx.windDir}° (${currentWx.windDir > 270 ? 'WNW' : currentWx.windDir > 180 ? 'SW' : 'NW'})`,
+      value: isWindValid ? `${currentWx.windSpeed} m/s` : 'Unavailable',
+      desc: isWindValid ? `Direction ${currentWx.windDir ?? 315}°` : 'Wind dir N/A',
       barColor: '#10b981',
-      pct: Math.min((currentWx.windSpeed / 12) * 100, 100),
+      pct: isWindValid ? Math.min((currentWx.windSpeed / 12) * 100, 100) : 0,
     },
     {
       icon: '🧭', label: 'Pressure',
-      value: `1010 hPa`,
-      desc: 'Barometer: Stable',
+      value: isPressValid ? `${currentWx.pressure} hPa` : 'Unavailable',
+      desc: isPressValid ? 'Atmospheric Barometer' : 'Pressure sensor N/A',
       barColor: '#6366f1',
-      pct: 65,
+      pct: isPressValid ? Math.min(Math.max(((currentWx.pressure - 980) / 50) * 100, 10), 100) : 0,
     },
     {
       icon: '☀️', label: 'UV Index',
-      value: `${currentWx.hour >= 6 && currentWx.hour <= 18 ? 6 : 0} of 11`,
-      desc: currentWx.hour >= 6 && currentWx.hour <= 18 ? 'Moderate to High' : 'Low / Night',
+      value: isUvValid ? `${currentWx.uvIndex} of 11` : 'Unavailable',
+      desc: isUvValid ? (currentWx.uvIndex > 5 ? 'High UV Exposure' : 'Low / Moderate UV') : 'UV sensor N/A',
       barColor: '#f59e0b',
-      pct: currentWx.hour >= 6 && currentWx.hour <= 18 ? 55 : 5,
+      pct: isUvValid ? Math.min((currentWx.uvIndex / 11) * 100, 100) : 0,
     },
     {
       icon: '👁️', label: 'Visibility',
-      value: currentStationMetrics.aqi > 250 ? '2.5 km' : '4.5 km',
-      desc: currentStationMetrics.aqi > 250 ? 'Reduced by haze/smog' : 'Moderate visibility',
+      value: isVisValid ? `${currentWx.visibility} km` : (Number.isFinite(currentStationMetrics.aqi) ? (currentStationMetrics.aqi > 250 ? '2.5 km' : '4.5 km') : 'Unavailable'),
+      desc: isVisValid ? 'Optical sensor reading' : 'Optical attenuation N/A',
       barColor: '#8b5cf6',
-      pct: currentStationMetrics.aqi > 250 ? 30 : 60,
+      pct: isVisValid ? Math.min((currentWx.visibility / 10) * 100, 100) : 0,
     },
     {
       icon: '🌧️', label: 'Precipitation Rate',
@@ -54,7 +60,6 @@ function WeatherParamGrid({ currentWx, currentStationMetrics, regionalMetrics, f
     {
       icon: '🌅', label: 'Sunrise / Sunset',
       value: (() => {
-        // Compute approximate sunrise/sunset for Delhi NCR latitude (~28.6°N)
         const now = new Date();
         const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
         const offset = Math.round(Math.sin((dayOfYear - 81) * 2 * Math.PI / 365) * 50);
@@ -69,10 +74,10 @@ function WeatherParamGrid({ currentWx, currentStationMetrics, regionalMetrics, f
     },
     {
       icon: '🌫️', label: 'Boundary Layer (PBL)',
-      value: `${currentWx.boundaryLayerHeight} m`,
-      desc: currentWx.isInversionRisk ? '⚠️ Inversion Trapping' : 'Normal mixing',
+      value: Number.isFinite(currentWx?.boundaryLayerHeight) ? `${currentWx.boundaryLayerHeight} m` : 'Unavailable',
+      desc: currentWx.isInversionRisk ? '⚠️ Inversion Trapping' : 'Normal atmospheric mixing',
       barColor: currentWx.isInversionRisk ? '#ef4444' : '#10b981',
-      pct: Math.min((currentWx.boundaryLayerHeight / 2000) * 100, 100),
+      pct: Number.isFinite(currentWx?.boundaryLayerHeight) ? Math.min((currentWx.boundaryLayerHeight / 2000) * 100, 100) : 0,
     },
   ];
 

@@ -14,7 +14,7 @@
    * @returns {Promise<Array>} 73 hourly weather objects (hour 0..72)
    */
   async function fetchDynamic72HourWeather(lat = 28.4744, lon = 77.5040) {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,precipitation,surface_pressure&forecast_days=4`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,precipitation,surface_pressure,visibility,uv_index&forecast_days=4`;
 
     try {
       const res = await fetch(url);
@@ -28,27 +28,33 @@
 
       for (let h = 0; h < len; h++) {
         const time = hourly.time[h] ? new Date(hourly.time[h]) : new Date(baseDate.getTime() + h * 3600 * 1000);
-        const temp = hourly.temperature_2m[h] ?? 28.0;
-        const rh = hourly.relative_humidity_2m[h] ?? 70;
-        const windSpeedKm = hourly.wind_speed_10m[h] ?? 9.0;
-        const windSpeed = +(windSpeedKm / 3.6).toFixed(1); // km/h to m/s
-        const windDir = hourly.wind_direction_10m[h] ?? 315;
-        const rain = hourly.precipitation[h] ?? 0;
-        const dewPoint = +(temp - (100 - rh) / 5).toFixed(1);
-        const pblh = Math.round(350 + (temp / 35.0) * 850);
+        const temp = Number.isFinite(hourly.temperature_2m?.[h]) ? +hourly.temperature_2m[h].toFixed(1) : null;
+        const rh = Number.isFinite(hourly.relative_humidity_2m?.[h]) ? Math.round(hourly.relative_humidity_2m[h]) : null;
+        const windSpeedKm = Number.isFinite(hourly.wind_speed_10m?.[h]) ? hourly.wind_speed_10m[h] : null;
+        const windSpeed = windSpeedKm !== null ? +(windSpeedKm / 3.6).toFixed(1) : null; // km/h to m/s
+        const windDir = Number.isFinite(hourly.wind_direction_10m?.[h]) ? Math.round(hourly.wind_direction_10m[h]) : null;
+        const rain = Number.isFinite(hourly.precipitation?.[h]) ? +hourly.precipitation[h].toFixed(1) : 0;
+        const pressure = Number.isFinite(hourly.surface_pressure?.[h]) ? Math.round(hourly.surface_pressure[h]) : null;
+        const visibility = Number.isFinite(hourly.visibility?.[h]) ? +(hourly.visibility[h] / 1000).toFixed(1) : null; // meters to km
+        const uvIndex = Number.isFinite(hourly.uv_index?.[h]) ? +hourly.uv_index[h].toFixed(1) : null;
+        const dewPoint = (temp !== null && rh !== null) ? +(temp - (100 - rh) / 5).toFixed(1) : null;
+        const pblh = temp !== null ? Math.round(350 + (temp / 35.0) * 850) : 600;
 
         weather72h.push({
           hour: h,
           timestamp: time.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric' }),
-          temp: +temp.toFixed(1),
+          temp: temp ?? 25.0,
           dewPoint,
-          relativeHumidity: Math.round(rh),
-          windSpeed,
-          windDir: Math.round(windDir),
+          relativeHumidity: rh ?? 65,
+          windSpeed: windSpeed ?? 2.5,
+          windDir: windDir ?? 315,
+          pressure,
+          visibility,
+          uvIndex,
           boundaryLayerHeight: pblh,
-          rain: +rain.toFixed(1),
-          ventilationIndex: Math.round(windSpeed * pblh),
-          isInversionRisk: pblh < 420 && windSpeed < 2.0,
+          rain,
+          ventilationIndex: Math.round((windSpeed ?? 2.5) * pblh),
+          isInversionRisk: pblh < 420 && (windSpeed ?? 2.5) < 2.0,
         });
       }
 
@@ -84,27 +90,26 @@
 
         for (let h = 0; h < len; h++) {
           const wx = weather72h[h] || weather72h[0] || {};
-          const pm25 = hourly.pm2_5[h] ? +hourly.pm2_5[h].toFixed(1) : 35.0;
-          const pm10 = hourly.pm10[h] ? +hourly.pm10[h].toFixed(1) : Math.round(pm25 * 1.55);
-          const no2 = hourly.nitrogen_dioxide[h] ? +hourly.nitrogen_dioxide[h].toFixed(1) : 25.0;
-          const so2 = hourly.sulphur_dioxide[h] ? +hourly.sulphur_dioxide[h].toFixed(1) : 12.0;
-          const o3 = hourly.ozone[h] ? +hourly.ozone[h].toFixed(1) : 55.0;
-          const co = hourly.carbon_monoxide[h] ? +(hourly.carbon_monoxide[h] / 1000).toFixed(2) : 0.8;
+          const pm25 = Number.isFinite(hourly.pm2_5?.[h]) ? +hourly.pm2_5[h].toFixed(1) : null;
+          const pm10 = Number.isFinite(hourly.pm10?.[h]) ? +hourly.pm10[h].toFixed(1) : (pm25 !== null ? Math.round(pm25 * 1.55) : null);
+          const no2 = Number.isFinite(hourly.nitrogen_dioxide?.[h]) ? +hourly.nitrogen_dioxide[h].toFixed(1) : null;
+          const so2 = Number.isFinite(hourly.sulphur_dioxide?.[h]) ? +hourly.sulphur_dioxide[h].toFixed(1) : null;
+          const o3 = Number.isFinite(hourly.ozone?.[h]) ? +hourly.ozone[h].toFixed(1) : null;
+          const co = Number.isFinite(hourly.carbon_monoxide?.[h]) ? +(hourly.carbon_monoxide[h] / 1000).toFixed(2) : null;
 
-          // Model A baseline vs Model B CML fusion residual
-          const modelA_PM25 = Math.round(pm25 * 1.08);
-          const modelB_PM25 = Math.round(pm25);
+          const modelA_PM25 = pm25 !== null ? Math.round(pm25 * 1.08) : null;
+          const modelB_PM25 = pm25;
 
-          const aqiA = window.FORECAST_ENGINE ? window.FORECAST_ENGINE.calculateAQI(modelA_PM25) : 50;
-          const aqiB = window.FORECAST_ENGINE ? window.FORECAST_ENGINE.calculateAQI(modelB_PM25) : 40;
-          const aqiTrue = window.FORECAST_ENGINE ? window.FORECAST_ENGINE.calculateAQI(pm25) : 40;
+          const aqiA = (window.FORECAST_ENGINE && modelA_PM25 !== null) ? window.FORECAST_ENGINE.calculateAQI(modelA_PM25) : null;
+          const aqiB = (window.FORECAST_ENGINE && modelB_PM25 !== null) ? window.FORECAST_ENGINE.calculateAQI(modelB_PM25) : null;
+          const aqiTrue = (window.FORECAST_ENGINE && pm25 !== null) ? window.FORECAST_ENGINE.calculateAQI(pm25) : null;
 
           series.push({
             hour: h,
             timestamp: wx.timestamp || `+${h}h`,
             groundTruthPM25: pm25,
             modelA_PM25,
-            modelB_PM25: pm25,
+            modelB_PM25,
             pm10,
             no2,
             so2,
@@ -113,16 +118,16 @@
             aqiA,
             aqiB,
             aqiTrue,
-            catA: window.FORECAST_ENGINE ? window.FORECAST_ENGINE.getAQICategory(aqiA) : {},
-            catB: window.FORECAST_ENGINE ? window.FORECAST_ENGINE.getAQICategory(aqiB) : {},
-            catTrue: window.FORECAST_ENGINE ? window.FORECAST_ENGINE.getAQICategory(aqiTrue) : {},
+            catA: aqiA !== null ? window.FORECAST_ENGINE.getAQICategory(aqiA) : { label: 'N/A', color: '#64748b' },
+            catB: aqiB !== null ? window.FORECAST_ENGINE.getAQICategory(aqiB) : { label: 'N/A', color: '#64748b' },
+            catTrue: aqiTrue !== null ? window.FORECAST_ENGINE.getAQICategory(aqiTrue) : { label: 'N/A', color: '#64748b' },
             weather: wx,
           });
         }
 
         stationForecasts[st.id] = series;
       } catch (err) {
-        console.warn(`Dynamic AQ fetch fallback for station ${st.id}:`, err.message);
+        console.warn(`Dynamic AQ fetch error for station ${st.id}:`, err.message);
       }
     });
 

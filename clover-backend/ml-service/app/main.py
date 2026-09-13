@@ -114,16 +114,37 @@ def forecast(request: ForecastRequest):
             engine.ingest(raw_rec)
             prediction_state = engine.predict_current_state()
 
-            for h in horizons_sorted:
-                h_str = f"{h}h"
-                h_data = prediction_state.get('multi_horizon_forecasts', {}).get(h_str)
-                if h_data:
-                    pm25_val = h_data['pm25_uncertainty_interval']['p50_median']
-                    aqi_val = h_data['aqi_uncertainty_interval']['p50_median']
-                else:
-                    pm25_val = fallback_forecast_pm25(request.features, h)
-                    aqi_val = aqi_from_pm25(pm25_val)
+            # Map known AI forecast horizons (0h, 1h, 3h, 6h, 12h, 24h, 72h)
+            known_horizons = {0: request.features.pm25}
+            for k, v in prediction_state.get('multi_horizon_forecasts', {}).items():
+                try:
+                    h_val = int(k.replace('h', ''))
+                    known_horizons[h_val] = v['pm25_uncertainty_interval']['p50_median']
+                except (ValueError, KeyError, TypeError):
+                    pass
 
+            sorted_h_keys = sorted(known_horizons.keys())
+
+            def get_ai_pm25_for_hour(hour: int) -> float:
+                if hour in known_horizons:
+                    return known_horizons[hour]
+                lower_h = sorted_h_keys[0]
+                upper_h = sorted_h_keys[-1]
+                for hk in sorted_h_keys:
+                    if hk <= hour:
+                        lower_h = hk
+                    if hk >= hour:
+                        upper_h = hk
+                        break
+                if lower_h == upper_h:
+                    return known_horizons[lower_h]
+                frac = (hour - lower_h) / (upper_h - lower_h)
+                val = known_horizons[lower_h] + frac * (known_horizons[upper_h] - known_horizons[lower_h])
+                return round(val, 1)
+
+            for h in horizons_sorted:
+                pm25_val = get_ai_pm25_for_hour(h)
+                aqi_val = aqi_from_pm25(pm25_val)
                 forecast_results.append({
                     "horizonHours": h,
                     "validAt": (issued + timedelta(hours=h)).isoformat(),

@@ -81,7 +81,7 @@ function AQICard({ currentStationMetrics, aqiStandard }) {
       <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-500">
         <span>Prominent Pollutant: <strong className="text-slate-800">PM2.5</strong></span>
         <span className="text-rose-600 font-bold">
-          {(pm25 / 15).toFixed(1)}× WHO Limit
+          {Number.isFinite(pm25) ? `${(pm25 / 15).toFixed(1)}× WHO Limit` : 'WHO Limit: 15 µg/m³'}
         </span>
       </div>
     </div>

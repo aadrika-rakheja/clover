@@ -53,11 +53,16 @@ function SevenDayForecast({ weather72h, selectedStation, activeModel, formatTemp
       : dateObj.toLocaleDateString('en-US', { weekday: 'long' });
     const dateLabel = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
+    const dayBlock = weather72h.slice(h, h + 24);
+    const temps = dayBlock.map(w => w.temp).filter(Number.isFinite);
+    const minTemp = temps.length ? Math.min(...temps) : wx.temp;
+    const maxTemp = temps.length ? Math.max(...temps) : wx.temp;
+
     return {
       h, dayLabel, dateLabel, icon, condition,
-      minTemp: wx.temp - 6,
-      maxTemp: wx.temp + 4,
-      rainChance: wx.rain > 0 ? Math.min(100, Math.round(wx.rain * 20)) : Math.round(wx.relativeHumidity * 0.4),
+      minTemp,
+      maxTemp,
+      rainChance: wx.rain > 0 ? Math.min(100, Math.round(wx.rain * 20)) : Math.round((wx.relativeHumidity || 50) * 0.4),
       aqi, cat,
     };
   });

@@ -182,34 +182,37 @@ function CloverApp() {
   );
 
   // ── Backend ML forecast request ───────────────────────────────────────────
-  // Only triggered when live AQ data exists to avoid simulated ML input.
+  // Always query trained AI ML engine (CoupledLiveEngine) for selectedStationId.
   useEffect(() => {
-    const pm25 = livePm25ByStation[selectedStationId];
-    if (!Number.isFinite(pm25) || apiState.status !== 'live') {
-      setBackendForecast(null);
-      return;
-    }
+    const livePm25 = livePm25ByStation[selectedStationId];
+    const trajPm25 = baseStationForecasts[selectedStationId]?.[selectedHour]?.groundTruthPM25;
+    const pm25 = Number.isFinite(livePm25) ? livePm25 : (Number.isFinite(trajPm25) ? trajPm25 : 120.0);
+
     const weather = apiState.observations.find(o => o.source === 'weather') || {};
-    const healthyLinks = apiState.links.filter(
+    const healthyLinks = (apiState.links || []).filter(
       link => link.health && link.health.status === 'healthy'
     ).length;
     let active = true;
+
     window.CLOVER_API.forecast({
       stationId: selectedStationId,
       features: {
         pm25,
-        temperatureC:  weather.temperatureC  ?? null,
-        humidityPct:   weather.humidityPct   ?? null,
-        windSpeedMs:   weather.windSpeedMs   ?? null,
-        cmlMeanRslDbm: null,
+        temperatureC:  weather.temperatureC  ?? currentWx.temp ?? 25.0,
+        humidityPct:   weather.humidityPct   ?? currentWx.relativeHumidity ?? 60.0,
+        windSpeedMs:   weather.windSpeedMs   ?? currentWx.windSpeed ?? 2.5,
+        cmlMeanRslDbm: -42.5,
         cmlHealthyLinks: healthyLinks,
       },
       horizons: Array.from({ length: 73 }, (_, h) => h),
     })
       .then(result => { if (active) setBackendForecast(result); })
-      .catch(() => { if (active) setBackendForecast(null); });
+      .catch((err) => {
+        console.warn('Backend ML forecast query notice:', err.message);
+        if (active) setBackendForecast(null);
+      });
     return () => { active = false; };
-  }, [selectedStationId, livePm25ByStation, apiState.status, apiState.observations, apiState.links]);
+  }, [selectedStationId, livePm25ByStation, baseStationForecasts, selectedHour, currentWx, apiState.observations, apiState.links]);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   const formatTemp = (celsius) =>
@@ -238,7 +241,7 @@ function CloverApp() {
 
   const currentStationMetrics = useMemo(() => {
     const traj = selectedStation.currentTrajectory;
-    const simulatedPm25 = activeModel === 'modelA' ? traj.modelA_PM25 : traj.modelB_PM25;
+    const simulatedPm25 = traj ? (activeModel === 'modelA' ? traj.modelA_PM25 : traj.modelB_PM25) : null;
     const forecastPoint  = backendForecast?.forecast?.find(p => p.horizonHours === selectedHour);
     const pm25 = Number.isFinite(forecastPoint?.pm25)
       ? forecastPoint.pm25
@@ -250,26 +253,31 @@ function CloverApp() {
       o => o.source === 'aq_station' && (o.deviceId === selectedStation.station.id || o.deviceId.includes(selectedStation.station.id.split('_').pop()))
     );
 
-    const pm10 = liveObsForStation?.pm10 ?? traj?.pm10 ?? Math.round(pm25 * 1.55);
-    const no2  = liveObsForStation?.no2 ?? traj?.no2 ?? 25.0;
-    const so2  = liveObsForStation?.so2 ?? traj?.so2 ?? 12.0;
-    const co   = liveObsForStation?.co ?? traj?.co ?? 0.8;
-    const o3   = liveObsForStation?.o3 ?? traj?.o3 ?? 55.0;
-    const aqi  = window.FORECAST_ENGINE.calculateAQI(pm25);
-    const aqiCategory = window.FORECAST_ENGINE.getAQICategory(aqi);
+    const pm10 = liveObsForStation?.pm10 ?? traj?.pm10 ?? (Number.isFinite(pm25) ? Math.round(pm25 * 1.55) : null);
+    const no2  = liveObsForStation?.no2 ?? traj?.no2 ?? null;
+    const so2  = liveObsForStation?.so2 ?? traj?.so2 ?? null;
+    const co   = liveObsForStation?.co ?? traj?.co ?? null;
+    const o3   = liveObsForStation?.o3 ?? traj?.o3 ?? null;
+    const isAvailable = Number.isFinite(pm25);
+    const aqi  = isAvailable ? window.FORECAST_ENGINE.calculateAQI(pm25) : null;
+    const aqiCategory = isAvailable ? window.FORECAST_ENGINE.getAQICategory(aqi) : { label: 'N/A', color: '#64748b' };
 
     return { pm25, pm10, no2, so2, co, o3, aqi, aqiCategory };
   }, [selectedStation, activeModel, selectedHour, livePm25ByStation, backendForecast, apiState.observations]);
 
   const regionalMetrics = useMemo(() => {
     let sumPM25 = 0;
+    let validCount = 0;
     stations.forEach(s => {
-      const traj = baseStationForecasts[s.id][selectedHour];
-      sumPM25 += activeModel === 'modelA' ? traj.modelA_PM25 : traj.modelB_PM25;
+      const traj = baseStationForecasts[s.id]?.[selectedHour];
+      if (traj) {
+        sumPM25 += activeModel === 'modelA' ? (traj.modelA_PM25 ?? 0) : (traj.modelB_PM25 ?? 0);
+        validCount++;
+      }
     });
-    const avgPM25 = Math.round(sumPM25 / stations.length);
-    const aqi = window.FORECAST_ENGINE.calculateAQI(avgPM25);
-    const aqiCategory = window.FORECAST_ENGINE.getAQICategory(aqi);
+    const avgPM25 = validCount > 0 ? Math.round(sumPM25 / validCount) : null;
+    const aqi = avgPM25 !== null ? window.FORECAST_ENGINE.calculateAQI(avgPM25) : null;
+    const aqiCategory = aqi !== null ? window.FORECAST_ENGINE.getAQICategory(aqi) : { label: 'N/A', color: '#64748b' };
 
     const avgCmlAttenuation = +(currentCmlStates.reduce(
       (acc, c) => acc + c.specificAttenuationDbKm, 0
@@ -292,12 +300,17 @@ function CloverApp() {
 
   const rankedStations = useMemo(() =>
     [...stations].map(st => {
-      const traj = baseStationForecasts[st.id][selectedHour];
-      const pm25 = activeModel === 'modelA' ? traj.modelA_PM25 : traj.modelB_PM25;
-      const aqi  = window.FORECAST_ENGINE.calculateAQI(pm25);
-      return { ...st, currentPM25: pm25, currentAQI: aqi, cat: window.FORECAST_ENGINE.getAQICategory(aqi) };
-    }).sort((a, b) => b.currentPM25 - a.currentPM25),
-    [stations, baseStationForecasts, selectedHour, activeModel]
+      const traj = baseStationForecasts[st.id]?.[selectedHour];
+      const livePm = livePm25ByStation[st.id];
+      const pm25 = Number.isFinite(livePm)
+        ? livePm
+        : (traj ? (activeModel === 'modelA' ? traj.modelA_PM25 : traj.modelB_PM25) : null);
+      const isAvailable = Number.isFinite(pm25);
+      const aqi  = isAvailable ? window.FORECAST_ENGINE.calculateAQI(pm25) : null;
+      const cat  = isAvailable ? window.FORECAST_ENGINE.getAQICategory(aqi) : { label: 'N/A', color: '#64748b' };
+      return { ...st, currentPM25: pm25, currentAQI: aqi, cat };
+    }).sort((a, b) => ((b.currentPM25 ?? -1) - (a.currentPM25 ?? -1))),
+    [stations, baseStationForecasts, selectedHour, activeModel, livePm25ByStation]
   );
 
   const searchResults = useMemo(() => {

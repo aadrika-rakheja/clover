@@ -57,12 +57,17 @@ function ForecastTab({ weather72h, selectedStation, activeModel, formatTemp, bac
       : dateObj.toLocaleDateString('en-US', { weekday: 'long' });
     const dateLabel = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 
+    const dayBlock = weather72h.slice(h, h + 24);
+    const temps = dayBlock.map(w => w.temp).filter(Number.isFinite);
+    const minTemp = temps.length ? Math.min(...temps) : wx.temp;
+    const maxTemp = temps.length ? Math.max(...temps) : wx.temp;
+
     return {
       h, dayLabel, dateLabel, icon, cond, windStr,
       hum: `${wx.relativeHumidity}%`,
-      rain: wx.rain > 0 ? Math.min(100, Math.round(wx.rain * 20)) : Math.round(wx.relativeHumidity * 0.35),
-      minTemp: wx.temp - 6,
-      maxTemp: wx.temp + 4,
+      rain: wx.rain > 0 ? Math.min(100, Math.round(wx.rain * 20)) : Math.round((wx.relativeHumidity || 50) * 0.35),
+      minTemp,
+      maxTemp,
       aqi, cat,
     };
   });
