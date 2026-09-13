@@ -10,18 +10,27 @@
  *  activeModel     {string}   'modelA' | 'modelB'
  *  formatTemp      {Function}
  */
-function ForecastTab({ weather72h, selectedStation, activeModel, formatTemp }) {
+function ForecastTab({ weather72h, selectedStation, activeModel, formatTemp, backendForecast }) {
   // Sample at every 24h for a full 7-day view, starting from now (0h)
   const SAMPLE_HOURS = [0, 12, 24, 36, 48, 60, 72];
 
   const days = SAMPLE_HOURS.map(h => {
     const wx   = weather72h[h] || weather72h[weather72h.length - 1];
-    const traj = selectedStation.fullTrajectory[h];
-    const pm25 = traj
-      ? (activeModel === 'modelA' ? traj.modelA_PM25 : traj.modelB_PM25)
-      : 180;
-    const aqi = window.FORECAST_ENGINE.calculateAQI(pm25);
-    const cat = window.FORECAST_ENGINE.getAQICategory(aqi);
+    const aiPoint = backendForecast?.forecast?.find(p => p.horizonHours === h);
+    const traj = selectedStation?.fullTrajectory?.[h];
+
+    let pm25 = Number.isFinite(aiPoint?.pm25)
+      ? aiPoint.pm25
+      : (traj ? (activeModel === 'modelA' ? traj.modelA_PM25 : traj.modelB_PM25) : null);
+
+    let aqi = Number.isFinite(aiPoint?.aqi)
+      ? aiPoint.aqi
+      : (Number.isFinite(pm25) ? window.FORECAST_ENGINE.calculateAQI(pm25) : null);
+
+    const isAvailable = Number.isFinite(aqi);
+    const cat = isAvailable
+      ? window.FORECAST_ENGINE.getAQICategory(aqi)
+      : { label: 'N/A', color: '#64748b' };
 
     const icon = wx.rain > 0 ? '🌧️' : wx.relativeHumidity > 80 ? '🌫️'
       : wx.isInversionRisk ? '😶‍🌫️' : wx.relativeHumidity > 65 ? '⛅' : '☀️';

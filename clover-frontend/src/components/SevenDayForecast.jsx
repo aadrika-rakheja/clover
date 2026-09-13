@@ -12,18 +12,27 @@
  *  formatTemp       {Function}
  *  setActiveTab     {Function}
  */
-function SevenDayForecast({ weather72h, selectedStation, activeModel, formatTemp, setActiveTab }) {
+function SevenDayForecast({ weather72h, selectedStation, activeModel, formatTemp, setActiveTab, backendForecast }) {
   // Sample one representative hour per day (every 24h starting from 0)
   const SAMPLE_HOURS = [0, 12, 24, 36, 48, 60, 72];
 
   const days = SAMPLE_HOURS.map(h => {
     const wx   = weather72h[h] || weather72h[weather72h.length - 1];
-    const traj = selectedStation.fullTrajectory[h];
-    const pm25 = traj
-      ? (activeModel === 'modelA' ? traj.modelA_PM25 : traj.modelB_PM25)
-      : 180;
-    const aqi = window.FORECAST_ENGINE.calculateAQI(pm25);
-    const cat = window.FORECAST_ENGINE.getAQICategory(aqi);
+    const aiPoint = backendForecast?.forecast?.find(p => p.horizonHours === h);
+    const traj = selectedStation?.fullTrajectory?.[h];
+
+    let pm25 = Number.isFinite(aiPoint?.pm25)
+      ? aiPoint.pm25
+      : (traj ? (activeModel === 'modelA' ? traj.modelA_PM25 : traj.modelB_PM25) : null);
+
+    let aqi = Number.isFinite(aiPoint?.aqi)
+      ? aiPoint.aqi
+      : (Number.isFinite(pm25) ? window.FORECAST_ENGINE.calculateAQI(pm25) : null);
+
+    const isAvailable = Number.isFinite(aqi);
+    const cat = isAvailable
+      ? window.FORECAST_ENGINE.getAQICategory(aqi)
+      : { label: 'N/A', color: '#64748b' };
 
     // Determine icon & condition from physics
     const icon = wx.rain > 0 ? '🌧️' : wx.relativeHumidity > 80 ? '🌫️'

@@ -16,7 +16,7 @@
 function HourlyForecast({
   weather72h, selectedStation, selectedHour, setSelectedHour,
   isPlaying, setIsPlaying, playSpeed, setPlaySpeed,
-  activeModel, formatTemp,
+  activeModel, formatTemp, backendForecast,
 }) {
   return (
     <div className="glass-card rounded-3xl p-5 shadow-sm">
@@ -69,12 +69,22 @@ function HourlyForecast({
       {/* Horizontal scroll cards */}
       <div className="forecast-scroll flex gap-2.5 overflow-x-auto pb-3 pt-1">
         {weather72h.slice(0, 36).map((wx, idx) => {
-          const stForecast = selectedStation.fullTrajectory[idx];
-          const pm25H = stForecast
-            ? (activeModel === 'modelA' ? stForecast.modelA_PM25 : stForecast.modelB_PM25)
-            : 180;
-          const aqiH = window.FORECAST_ENGINE.calculateAQI(pm25H);
-          const catH = window.FORECAST_ENGINE.getAQICategory(aqiH);
+          const aiPoint = backendForecast?.forecast?.find(p => p.horizonHours === idx);
+          const stForecast = selectedStation?.fullTrajectory?.[idx];
+
+          let pm25H = Number.isFinite(aiPoint?.pm25)
+            ? aiPoint.pm25
+            : (stForecast ? (activeModel === 'modelA' ? stForecast.modelA_PM25 : stForecast.modelB_PM25) : null);
+
+          let aqiH = Number.isFinite(aiPoint?.aqi)
+            ? aiPoint.aqi
+            : (Number.isFinite(pm25H) ? window.FORECAST_ENGINE.calculateAQI(pm25H) : null);
+
+          const isAvailable = Number.isFinite(aqiH);
+          const catH = isAvailable
+            ? window.FORECAST_ENGINE.getAQICategory(aqiH)
+            : { label: 'N/A', color: '#64748b' };
+
           const isSelected = selectedHour === idx;
           const icon = wx.rain > 0 ? '🌧️' : wx.relativeHumidity > 80 ? '🌫️'
             : wx.isInversionRisk ? '😶‍🌫️' : wx.relativeHumidity > 65 ? '🌥️' : '☀️';
@@ -100,10 +110,10 @@ function HourlyForecast({
                 {wx.rain > 0 ? `${wx.rain}mm` : `${wx.relativeHumidity}%`}
               </div>
               <div
-                className="mt-2 px-1.5 py-0.5 rounded-full text-[10px] font-extrabold text-white"
-                style={{ backgroundColor: catH.color }}
+                className="mt-2 px-1.5 py-0.5 rounded-full text-[10px] font-extrabold text-white truncate"
+                style={{ backgroundColor: isAvailable ? catH.color : '#64748b' }}
               >
-                AQI {aqiH}
+                {isAvailable ? `AQI ${aqiH}` : 'N/A'}
               </div>
             </div>
           );

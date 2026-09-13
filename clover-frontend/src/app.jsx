@@ -710,6 +710,7 @@ function CloverApp() {
               playSpeed={playSpeed}          setPlaySpeed={setPlaySpeed}
               activeModel={activeModel}
               formatTemp={formatTemp}
+              backendForecast={backendForecast}
             />
 
             {/* 7-day outlook + health recommendations */}
@@ -720,6 +721,7 @@ function CloverApp() {
                 activeModel={activeModel}
                 formatTemp={formatTemp}
                 setActiveTab={setActiveTab}
+                backendForecast={backendForecast}
               />
               <HealthRecommendations aqi={currentStationMetrics.aqi} />
             </div>
@@ -749,6 +751,7 @@ function CloverApp() {
             selectedStation={selectedStation}
             activeModel={activeModel}
             formatTemp={formatTemp}
+            backendForecast={backendForecast}
           />
         )}
 
