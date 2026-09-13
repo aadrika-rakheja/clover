@@ -58,22 +58,24 @@ function PollutantsGrid({ currentStationMetrics, selectedStation }) {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
         {pollutants.map(poll => {
-          const pct = Math.min((poll.value / (poll.naaqsLimit * 1.5)) * 100, 100);
+          const isAvailable = Number.isFinite(poll.value);
+          const displayVal = isAvailable ? poll.value : 'Unavailable';
+          const pct = isAvailable ? Math.min((poll.value / (poll.naaqsLimit * 1.5)) * 100, 100) : 0;
           return (
             <div key={poll.name} className="p-3.5 rounded-2xl glass-subtle">
               <div className="flex items-center justify-between mb-1">
                 <span className="font-extrabold text-xs text-slate-700">{poll.name}</span>
                 <span
                   className="text-[10px] font-bold px-1.5 py-0.5 rounded"
-                  style={{ backgroundColor: poll.color + '25', color: poll.color }}
+                  style={{ backgroundColor: isAvailable ? poll.color + '25' : '#94a3b825', color: isAvailable ? poll.color : '#64748b' }}
                 >
-                  {poll.status}
+                  {isAvailable ? poll.status : 'N/A'}
                 </span>
               </div>
-              <div className="text-2xl font-black font-heading text-slate-900 mt-1">
-                {poll.value}
+              <div className="text-xl sm:text-2xl font-black font-heading text-slate-900 mt-1 truncate">
+                {displayVal}
               </div>
-              <div className="text-[10px] text-slate-400 mb-2">{poll.unit}</div>
+              <div className="text-[10px] text-slate-400 mb-2">{isAvailable ? poll.unit : 'No Data'}</div>
               <div className="w-full h-1.5 bg-slate-200/60 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-500"
