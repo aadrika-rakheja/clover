@@ -115,12 +115,20 @@ def forecast(request: ForecastRequest):
             prediction_state = engine.predict_current_state()
 
             for h in horizons_sorted:
-                pm25_val = fallback_forecast_pm25(request.features, h)
+                h_str = f"{h}h"
+                h_data = prediction_state.get('multi_horizon_forecasts', {}).get(h_str)
+                if h_data:
+                    pm25_val = h_data['pm25_uncertainty_interval']['p50_median']
+                    aqi_val = h_data['aqi_uncertainty_interval']['p50_median']
+                else:
+                    pm25_val = fallback_forecast_pm25(request.features, h)
+                    aqi_val = aqi_from_pm25(pm25_val)
+
                 forecast_results.append({
                     "horizonHours": h,
                     "validAt": (issued + timedelta(hours=h)).isoformat(),
                     "pm25": pm25_val,
-                    "aqi": aqi_from_pm25(pm25_val)
+                    "aqi": aqi_val
                 })
 
             return {
