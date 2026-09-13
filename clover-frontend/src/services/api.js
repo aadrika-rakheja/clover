@@ -12,7 +12,7 @@
 (function () {
   const BASE_URL = window.CLOVER_API_URL
     ? window.CLOVER_API_URL.replace(/\/$/, '')
-    : 'http://localhost:4000';
+    : 'http://localhost:8000';
 
   // ── Request log ─────────────────────────────────────────────────────────
   // window.API_LOG is a capped ring-buffer of the last 50 API calls.

@@ -27,15 +27,12 @@ function Header({
   searchResults, flyToStation,
   currentTimeStr,
   tempUnit, setTempUnit,
-  aqiStandard, setAqiStandard,
-  apiState,
 }) {
   const NAV_TABS = [
     ['weather',     'Weather & Overview'],
     ['forecast',    '7-Day Forecast'],
     ['map',         'Interactive Radar & Map'],
     ['pollutants',  'Pollutants Deep-Dive'],
-    ['cml_science', '✦ CML Microwave Radar'],
   ];
 
   return (
@@ -73,9 +70,6 @@ function Header({
           <div>
             <div className="flex items-center gap-1.5">
               <span className="font-black text-2xl tracking-tight text-slate-900 font-heading">CLOVER</span>
-              <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-300/60 px-1.5 py-0.5 rounded-full">
-                v3.4
-              </span>
             </div>
             <div className="text-[10px] text-slate-500 font-medium leading-none tracking-wide">
               Greater Noida Weather &amp; Air Quality Engine
@@ -151,12 +145,6 @@ function Header({
             ⚡ Sync Live
           </button>
 
-          <ApiStatusBadge
-            status={apiState.status}
-            alertCount={apiState.alerts.length}
-            recordCount={apiState.observations.length}
-          />
-
           {/* Clock */}
           <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-subtle text-slate-700 text-xs font-semibold font-mono">
             <span className="text-emerald-600">🕒</span>
@@ -178,16 +166,6 @@ function Header({
               </button>
             ))}
           </div>
-
-          {/* AQI standard toggle */}
-          <button
-            id="standard-toggle-btn"
-            onClick={() => setAqiStandard(prev => prev === 'IN' ? 'US' : 'IN')}
-            className="hidden sm:inline-flex px-3 py-1.5 rounded-xl text-xs font-bold glass-subtle text-slate-700 hover:bg-white/80 transition-colors"
-            title="Toggle Standard between Indian CPCB and US EPA"
-          >
-            Standard: <span className="text-emerald-700 ml-1">{aqiStandard === 'IN' ? 'CPCB' : 'US-EPA'}</span>
-          </button>
         </div>
       </div>
 
@@ -206,9 +184,6 @@ function Header({
               }`}
             >
               {label}
-              {id === 'cml_science' && (
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse inline-block"/>
-              )}
             </button>
           ))}
         </div>

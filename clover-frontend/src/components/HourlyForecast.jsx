@@ -27,7 +27,7 @@ function HourlyForecast({
             Greater Noida Hourly Weather &amp; AQI Forecast
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Continuous 72-hour trajectory with CML microwave precipitation and inversion coupling
+            Continuous 72-hour atmospheric trajectory with precipitation and inversion forecasting
           </p>
         </div>
 
@@ -118,22 +118,6 @@ function HourlyForecast({
             </div>
           );
         })}
-      </div>
-
-      {/* Time slider */}
-      <div className="mt-3 pt-2">
-        <input
-          type="range" min="0" max="72"
-          value={selectedHour}
-          onChange={e => setSelectedHour(parseInt(e.target.value))}
-          className="w-full"
-        />
-        <div className="flex justify-between text-[10px] font-mono text-slate-400 mt-1">
-          <span>Current (0h)</span>
-          <span>+24h (Tomorrow)</span>
-          <span>+48h (Day 2)</span>
-          <span>+72h (Day 3)</span>
-        </div>
       </div>
     </div>
   );

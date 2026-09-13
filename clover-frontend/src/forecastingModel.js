@@ -4,23 +4,24 @@
  */
 
 (function() {
-  // Indian National AQI Calculator for PM2.5 (ug/m3)
+  // Standard AQI Calculator for PM2.5 (ug/m3) (aligned with US EPA / AQI.in real-world observation telemetry)
   function calculateAQI(pm25) {
-    if (pm25 <= 30) return Math.round((50 / 30) * pm25);
-    if (pm25 <= 60) return Math.round(50 + ((100 - 50) / (60 - 30)) * (pm25 - 30));
-    if (pm25 <= 90) return Math.round(100 + ((200 - 100) / (90 - 60)) * (pm25 - 60));
-    if (pm25 <= 120) return Math.round(200 + ((300 - 200) / (120 - 90)) * (pm25 - 90));
-    if (pm25 <= 250) return Math.round(300 + ((400 - 300) / (250 - 120)) * (pm25 - 120));
-    return Math.min(500, Math.round(400 + ((500 - 400) / (380 - 250)) * (pm25 - 250)));
+    if (pm25 <= 0) return 0;
+    if (pm25 <= 12.0) return Math.round((50 / 12.0) * pm25);
+    if (pm25 <= 35.4) return Math.round(51 + ((100 - 51) / (35.4 - 12.1)) * (pm25 - 12.1));
+    if (pm25 <= 55.4) return Math.round(101 + ((150 - 101) / (55.4 - 35.5)) * (pm25 - 35.5));
+    if (pm25 <= 150.4) return Math.round(151 + ((200 - 151) / (150.4 - 55.5)) * (pm25 - 55.5));
+    if (pm25 <= 250.4) return Math.round(201 + ((300 - 201) / (250.4 - 150.5)) * (pm25 - 150.5));
+    return Math.min(500, Math.round(301 + ((500 - 301) / (500.0 - 250.5)) * (pm25 - 250.5)));
   }
 
   function getAQICategory(aqi) {
     if (aqi <= 50) return { label: "Good", color: "#10b981", bg: "rgba(16, 185, 129, 0.15)", stage: "NORMAL" };
-    if (aqi <= 100) return { label: "Satisfactory", color: "#38bdf8", bg: "rgba(56, 189, 248, 0.15)", stage: "NORMAL" };
-    if (aqi <= 200) return { label: "Moderate", color: "#f59e0b", bg: "rgba(245, 158, 11, 0.15)", stage: "NORMAL" };
-    if (aqi <= 300) return { label: "Poor", color: "#f97316", bg: "rgba(249, 115, 22, 0.15)", stage: "GRAP STAGE I" };
-    if (aqi <= 400) return { label: "Very Poor", color: "#ef4444", bg: "rgba(239, 68, 68, 0.15)", stage: "GRAP STAGE II" };
-    return { label: "Severe", color: "#b91c1c", bg: "rgba(185, 28, 28, 0.25)", stage: "GRAP STAGE III/IV" };
+    if (aqi <= 100) return { label: "Moderate", color: "#eab308", bg: "rgba(234, 179, 8, 0.15)", stage: "NORMAL" };
+    if (aqi <= 150) return { label: "Poor", color: "#f97316", bg: "rgba(249, 115, 22, 0.15)", stage: "STAGE I" };
+    if (aqi <= 200) return { label: "Unhealthy", color: "#ef4444", bg: "rgba(239, 68, 68, 0.15)", stage: "STAGE II" };
+    if (aqi <= 300) return { label: "Very Unhealthy", color: "#8b5cf6", bg: "rgba(139, 92, 246, 0.20)", stage: "STAGE III" };
+    return { label: "Hazardous", color: "#b91c1c", bg: "rgba(185, 28, 28, 0.25)", stage: "STAGE IV" };
   }
 
   // Generate realistic 72-hour Delhi weather trajectory
@@ -96,15 +97,16 @@
         const washoutFactor = wx.rain > 0 ? Math.max(0.6, 1.0 - (wx.rain * 0.15)) : 1.0;
 
         // Ground Truth PM2.5: realistic calibrated scale
-        const groundTruthPM25 = Math.min(360, Math.max(45, Math.round((station.basePM25 * 0.72) * stagnationMultiplier * smokeFactor * washoutFactor)));
+        const base = Number.isFinite(station.basePM25) ? station.basePM25 : 38.5;
+        const groundTruthPM25 = Math.min(180, Math.max(10, Math.round(base * stagnationMultiplier * smokeFactor * washoutFactor)));
 
         // Model A (Without CML): misses local micro-inversion traps, has higher lag & variance
-        const modelA_error = Math.sin(h / 3 + station.lat * 8) * 22 + (wx.relativeHumidity > 72 ? -18 : 8);
-        const modelA_PM25 = Math.min(380, Math.max(40, Math.round(groundTruthPM25 + modelA_error)));
+        const modelA_error = Math.sin(h / 3 + station.lat * 8) * 4.5 + (wx.relativeHumidity > 72 ? -3.5 : 2.0);
+        const modelA_PM25 = Math.min(180, Math.max(10, Math.round(groundTruthPM25 + modelA_error)));
 
         // Model B (With CML Fusion): tight tracking of moisture fading, minimal error
-        const modelB_residual = Math.sin(h / 5 + station.lon * 6) * 6;
-        const modelB_PM25 = Math.min(370, Math.max(42, Math.round(groundTruthPM25 + modelB_residual)));
+        const modelB_residual = Math.sin(h / 5 + station.lon * 6) * 1.5;
+        const modelB_PM25 = Math.min(180, Math.max(10, Math.round(groundTruthPM25 + modelB_residual)));
 
         const aqiA = calculateAQI(modelA_PM25);
         const aqiB = calculateAQI(modelB_PM25);
@@ -195,8 +197,9 @@
           const distKm = Math.sqrt(sdLat * sdLat + sdLon * sdLon);
           const weight = 1.0 / (Math.pow(distKm, 2.0) + 1.2);
 
-          const traj = stationTrajectories[st.id][selectedHour];
-          const pm25 = activeModel === 'modelA' ? traj.modelA_PM25 : traj.modelB_PM25;
+          const traj = stationTrajectories[st.id]?.[selectedHour];
+          const baseVal = st.basePM25 || 38.5;
+          const pm25 = traj ? (activeModel === 'modelA' ? traj.modelA_PM25 : traj.modelB_PM25) : baseVal;
 
           weightedSum += pm25 * weight;
           weightSum += weight;
@@ -210,7 +213,7 @@
         if (dBawana < 7.0) interpPM25 *= (1.0 + (7.0 - dBawana) * 0.035);
         if (dAnand < 7.0) interpPM25 *= (1.0 + (7.0 - dAnand) * 0.035);
 
-        const finalIntensity = Math.min(1.0, Math.max(0.06, (interpPM25 / 330.0) * edgeMultiplier));
+        const finalIntensity = Math.min(1.0, Math.max(0.06, (interpPM25 / 55.0) * edgeMultiplier));
         if (finalIntensity > 0.08) {
           points.push([+lat.toFixed(4), +lon.toFixed(4), +finalIntensity.toFixed(3)]);
         }

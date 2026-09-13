@@ -53,7 +53,7 @@ function WeatherParamGrid({ currentWx, currentStationMetrics, regionalMetrics, f
     {
       icon: '🌧️', label: 'Precipitation Rate',
       value: `${regionalMetrics.cmlDerivedRainRate} mm/h`,
-      desc: 'CML Microwave Sensing',
+      desc: 'Atmospheric Radar',
       barColor: '#0284c7',
       pct: Math.min(regionalMetrics.cmlDerivedRainRate * 15, 100),
     },

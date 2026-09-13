@@ -5,7 +5,7 @@
  *  currentStationMetrics  {Object}  { aqi, aqiCategory, pm25 }
  *  aqiStandard            {'IN'|'US'}
  */
-function AQICard({ currentStationMetrics, aqiStandard }) {
+function AQICard({ currentStationMetrics }) {
   const { aqi, aqiCategory, pm25 } = currentStationMetrics;
   const color = aqiCategory.color;
 
@@ -62,7 +62,7 @@ function AQICard({ currentStationMetrics, aqiStandard }) {
                 {Number.isFinite(aqi) ? aqi : 'N/A'}
               </div>
               <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
-                AQI ({aqiStandard})
+                AQI INDEX
               </div>
               <div className="text-xs font-bold mt-0.5 text-slate-700">
                 PM2.5: {Number.isFinite(pm25) ? `${pm25} µg/m³` : 'Unavailable'}

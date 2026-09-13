@@ -75,21 +75,6 @@ function WeatherHeroCard({ currentWx, formatTemp, cmlDerivedRainRate }) {
           </span>
         </div>
       </div>
-
-      {/* CML microwave rain strip */}
-      <div className="mt-5 p-3.5 rounded-2xl glass-subtle text-xs text-slate-600 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-base">📡</span>
-          <span>
-            CML Microwave Rain Radar:{' '}
-            <strong className="text-emerald-700">{cmlDerivedRainRate} mm/h</strong>
-            {' '}(Atmospheric link tomogram)
-          </span>
-        </div>
-        <span className="hidden sm:inline text-[11px] font-mono text-slate-400">
-          Confidence: 98.4%
-        </span>
-      </div>
     </div>
   );
 }

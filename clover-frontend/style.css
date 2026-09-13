@@ -436,3 +436,80 @@ input[type="checkbox"] {
   70%  { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
   100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
+
+/* =========================================================
+   INTERACTIVE RADAR MAP HUD & SWEEP ANIMATION
+   ========================================================= */
+.radar-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.radar-overlay-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 400;
+}
+
+@keyframes radarSweepBeam {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.radar-sweep-beam {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 140%;
+  height: 140%;
+  margin-top: -70%;
+  margin-left: -70%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(16, 185, 129, 0) 0deg,
+    rgba(16, 185, 129, 0) 300deg,
+    rgba(16, 185, 129, 0.08) 330deg,
+    rgba(16, 185, 129, 0.28) 360deg
+  );
+  animation: radarSweepBeam 5s linear infinite;
+  pointer-events: none;
+}
+
+.radar-sweep-beam.weather-radar-mode {
+  background: conic-gradient(
+    from 0deg,
+    rgba(14, 165, 233, 0) 0deg,
+    rgba(14, 165, 233, 0) 300deg,
+    rgba(14, 165, 233, 0.08) 330deg,
+    rgba(14, 165, 233, 0.30) 360deg
+  );
+}
+
+.radar-range-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px dashed rgba(16, 185, 129, 0.35);
+  pointer-events: none;
+}
+
+.radar-range-ring.weather-ring {
+  border-color: rgba(14, 165, 233, 0.35);
+}
+
+.radar-hud-pill {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+}
+
