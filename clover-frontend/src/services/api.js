@@ -10,15 +10,9 @@
  */
 
 (function () {
-  // When served via Vite dev server (or any HTTP server), use relative URLs
-  // so the Vite proxy forwards /api/* → localhost:4000 without CORS issues.
-  // For direct file:// opens, fall back to the absolute backend URL.
-  const isServedViaHTTP = window.location.protocol !== 'file:';
   const BASE_URL = window.CLOVER_API_URL
     ? window.CLOVER_API_URL.replace(/\/$/, '')
-    : isServedViaHTTP
-      ? '' // relative — Vite proxy or same-origin deployment
-      : 'http://localhost:4000';
+    : 'http://localhost:4000';
 
   // ── Request log ─────────────────────────────────────────────────────────
   // window.API_LOG is a capped ring-buffer of the last 50 API calls.

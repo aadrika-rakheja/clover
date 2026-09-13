@@ -23,12 +23,34 @@ function CloverApp() {
   const cmlLinks    = window.CML_LINKS;
   const fireHotspots = window.CROP_FIRE_HOTSPOTS;
 
-  // ── Offline physics engine (offline fallback + spatial interpolation) ─────
-  const weather72h = useMemo(() => window.FORECAST_ENGINE.generate72HourWeather(), []);
-  const baseStationForecasts = useMemo(
-    () => window.FORECAST_ENGINE.generateStationForecasts(stations, weather72h, cmlLinks, towers),
-    [stations, weather72h, cmlLinks, towers]
+  // ── Dynamic live atmospheric engine ───────────────────────────────────────
+  const [weather72h, setWeather72h] = useState(() =>
+    window.FORECAST_ENGINE ? window.FORECAST_ENGINE.generate72HourWeather() : []
   );
+  const [baseStationForecasts, setBaseStationForecasts] = useState(() =>
+    window.FORECAST_ENGINE ? window.FORECAST_ENGINE.generateStationForecasts(stations, weather72h, cmlLinks, towers) : {}
+  );
+
+  useEffect(() => {
+    let active = true;
+    const initDynamicData = async () => {
+      if (!window.LIVE_WEATHER_SERVICE) return;
+      try {
+        const liveWx = await window.LIVE_WEATHER_SERVICE.fetchDynamic72HourWeather();
+        if (active && liveWx && liveWx.length > 0) {
+          setWeather72h(liveWx);
+          const liveStForecasts = await window.LIVE_WEATHER_SERVICE.fetchDynamicStationForecasts(stations, liveWx);
+          if (active && liveStForecasts && Object.keys(liveStForecasts).length > 0) {
+            setBaseStationForecasts(liveStForecasts);
+          }
+        }
+      } catch (err) {
+        console.warn('Live dynamic weather initialization notice:', err);
+      }
+    };
+    initDynamicData();
+    return () => { active = false; };
+  }, [stations]);
   const towersMap = useMemo(() => {
     const map = {};
     towers.forEach(t => { map[t.id] = t; });
@@ -228,11 +250,11 @@ function CloverApp() {
       o => o.source === 'aq_station' && (o.deviceId === selectedStation.station.id || o.deviceId.includes(selectedStation.station.id.split('_').pop()))
     );
 
-    const pm10 = liveObsForStation?.pm10 ?? Math.round(pm25 * 1.55);
-    const no2  = liveObsForStation?.no2 ?? (traj.modelB_NO2 || selectedStation.station.baseNO2);
-    const so2  = liveObsForStation?.so2 ?? (traj.modelB_SO2 || selectedStation.station.baseSO2);
-    const co   = liveObsForStation?.co ?? +(traj.modelB_CO || selectedStation.station.baseCO).toFixed(1);
-    const o3   = liveObsForStation?.o3 ?? (traj.modelB_O3  || selectedStation.station.baseO3);
+    const pm10 = liveObsForStation?.pm10 ?? traj?.pm10 ?? Math.round(pm25 * 1.55);
+    const no2  = liveObsForStation?.no2 ?? traj?.no2 ?? 25.0;
+    const so2  = liveObsForStation?.so2 ?? traj?.so2 ?? 12.0;
+    const co   = liveObsForStation?.co ?? traj?.co ?? 0.8;
+    const o3   = liveObsForStation?.o3 ?? traj?.o3 ?? 55.0;
     const aqi  = window.FORECAST_ENGINE.calculateAQI(pm25);
     const aqiCategory = window.FORECAST_ENGINE.getAQICategory(aqi);
 
